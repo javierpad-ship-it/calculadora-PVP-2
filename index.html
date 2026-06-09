@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Costos</title>
+    <!-- Incluye Tailwind CSS para un diseño moderno y responsive -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Define la fuente Inter para un aspecto limpio */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #EAEAE2; /* Color de fondo actualizado */
+        }
+        /* Estilo para el input de precio */
+        .price-input-container {
+            position: relative;
+            background: linear-gradient(145deg, #e0e7ff, #c7d2fe);
+            border-radius: 1rem;
+            padding: 0.5rem;
+            box-shadow: 5px 5px 10px #c5c5c5, -5px -5px 10px #ffffff;
+            transition: all 0.3s ease-in-out;
+        }
+        .price-input-container:focus-within {
+            box-shadow: inset 5px 5px 10px #b1b9e2, inset -5px -5px 10px #e1e9ff;
+        }
+        .price-input {
+            width: 100%;
+            height: 4rem; /* Altura más grande */
+            font-size: 2.5rem; /* Letra más grande */
+            font-weight: 700; /* Negrita */
+            color: #1f2937; /* Color de texto oscuro */
+            background: transparent;
+            border: none;
+            outline: none;
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+        .currency-symbol-large {
+            font-size: 2rem;
+            color: #6366f1;
+            font-weight: 700;
+        }
+        /* Ajuste de los otros inputs para que se vean bien */
+        .standard-input {
+            width: 100%;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            border: 2px solid #e5e7eb;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+        .standard-input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.5);
+        }
+        /* Estilos para las pestañas */
+        .tab-active {
+            color: white;
+            background-color: rgb(0, 144, 255);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+    <!-- Barra de título nueva -->
+    <div class="bg-[rgb(0,144,255)] rounded-t-xl p-4 text-center">
+        <h1 class="text-3xl sm:text-4xl font-extrabold text-white">
+            Calculadora de Costos y PVP
+        </h1>
+    </div>
+
+    <div class="max-w-2xl mx-auto bg-white p-8 rounded-b-xl shadow-lg border border-gray-200">
+        <!-- Pestañas de navegación mejoradas -->
+        <div class="flex border-b border-gray-200 mb-6 bg-gray-100 rounded-lg shadow-inner">
+            <button id="tab-costo-pvp" class="flex-1 p-3 text-center cursor-pointer rounded-tl-lg transition duration-150 ease-in-out font-semibold text-gray-500 tab-active" onclick="showTab('costo-pvp')">
+                Costo -> PVP
+            </button>
+            <button id="tab-pvp-costo" class="flex-1 p-3 text-center cursor-pointer rounded-tr-lg transition duration-150 ease-in-out font-semibold text-gray-500" onclick="showTab('pvp-costo')">
+                PVP -> Costo
+            </button>
+            <button id="tab-pvp-ic-costo" class="flex-1 p-3 text-center cursor-pointer rounded-tr-lg transition duration-150 ease-in-out font-semibold text-gray-500" onclick="showTab('pvp-ic-costo')">
+                PVP -> IC -> Costo
+            </button>
+        </div>
+
+        <!-- Contenedor de la pestaña "Costo -> PVP" -->
+        <div id="costo-pvp-tab-content">
+            <p class="text-center text-gray-600 mb-8">
+                Ingresa los datos del costo de compra para calcular el PVP.
+            </p>
+            <form id="calculationFormCostoPVP" class="space-y-6">
+                <!-- Sección de entrada de precio y moneda - Diseño mejorado -->
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <label for="price" class="block text-sm font-medium text-gray-700 mb-2">Precio del Producto</label>
+                    <div class="price-input-container">
+                        <div class="flex items-center">
+                            <input type="number" step="0.01" id="price" name="price"
+                                class="price-input"
+                                placeholder="Ej: 100" required>
+                            <span id="currencySymbol" class="currency-symbol-large pr-4">$</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex space-x-4">
+                        <div class="flex items-center">
+                            <input id="currencyUSD" name="currency" type="radio" value="USD" checked
+                                class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                            <label for="currencyUSD" class="ml-2 block text-sm font-medium text-gray-700">
+                                Dólares (USD)
+                            </label>
+                        </div>
+                        <div class="flex items-center">
+                            <input id="currencyEUR" name="currency" type="radio" value="EUR"
+                                class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                            <label for="currencyEUR" class="ml-2 block text-sm font-medium text-gray-700">
+                                Euros (EUR)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección de entrada del tipo de cambio y factor de importación -->
+                <div class="bg-gray-50 p-6 rounded-lg grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="exchangeRate" class="block text-sm font-medium text-gray-700">Tipo de Cambio</label>
+                        <div class="mt-1 flex rounded-lg shadow-sm">
+                            <input type="number" step="0.0001" id="exchangeRate" name="exchangeRate"
+                                class="standard-input rounded-l-lg"
+                                placeholder="Ej: 3.60" required>
+                            <div class="inline-flex items-center px-4 rounded-r-lg border-2 border-l-0 border-gray-300 bg-white text-gray-500">
+                                <span>Moneda Local</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="importFactor" class="block text-sm font-medium text-gray-700">Factor de Importación</label>
+                        <div class="mt-1 flex rounded-lg shadow-sm">
+                            <input type="number" step="0.01" id="importFactor" name="importFactor" value="1.3"
+                                class="standard-input"
+                                placeholder="Ej: 1.3" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón de cálculo -->
+                <div class="flex justify-center">
+                    <button type="submit"
+                            class="w-full sm:w-auto px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                        Calcular
+                    </button>
+                </div>
+            </form>
+
+            <!-- Sección de resultados -->
+            <div id="resultsCostoPVP" class="mt-8 space-y-4 hidden">
+                <h2 class="text-2xl font-bold text-gray-900 text-center">Resultados</h2>
+                
+                <!-- Costo Kárdex inicial -->
+                <div class="bg-indigo-50 border-l-4 border-indigo-400 p-4 rounded-lg shadow-md">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0 text-indigo-800">
+                            <svg class="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-indigo-800">Costo Kárdex (Inicial)</h3>
+                            <p id="kardexCost" class="mt-1 text-xl font-bold text-indigo-900">S/ 0.00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-6 border-gray-200">
+                <h3 class="text-xl font-bold text-gray-900 text-center mb-4">Opciones de Precio de Venta (PVP)</h3>
+
+                <!-- Opciones de PVP en una sola línea -->
+                <div class="flex flex-col sm:flex-row justify-between items-stretch gap-4 text-center">
+                    
+                    <!-- Opción Inferior -->
+                    <div class="flex-1 bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-lg shadow-md">
+                        <h4 class="text-sm font-medium text-yellow-800">PVP Inferior</h4>
+                        <p id="inferiorPvp" class="mt-1 text-xl font-bold text-yellow-900">S/ 0.00</p>
+                        <p class="mt-2 text-sm text-yellow-700">CV(%): <span id="inferiorCV" class="font-bold">0.00%</span></p>
+                    </div>
+
+                    <!-- Opción Sugerida -->
+                    <div class="flex-1 bg-green-50 border-l-4 border-green-400 p-4 rounded-lg shadow-md">
+                        <h4 class="text-sm font-medium text-green-800">PVP Sugerido</h4>
+                        <p id="pvpSugerido" class="mt-1 text-xl font-bold text-green-900">S/ 0.00</p>
+                        <p class="mt-2 text-sm text-green-700">CV(%): <span id="pvpSugeridoCV" class="font-bold">0.00%</span></p>
+                    </div>
+                    
+                    <!-- Opción Superior -->
+                    <div class="flex-1 bg-blue-50 border-l-4 border-blue-400 p-4 rounded-lg shadow-md">
+                        <h4 class="text-sm font-medium text-blue-800">PVP Superior</h4>
+                        <p id="superiorPvp" class="mt-1 text-xl font-bold text-blue-900">S/ 0.00</p>
+                        <p class="mt-2 text-sm text-blue-700">CV(%): <span id="superiorCV" class="font-bold">0.00%</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor de la pestaña "PVP -> Costo" -->
+        <div id="pvp-costo-tab-content" class="hidden">
+            <p class="text-center text-gray-600 mb-8">
+                Ingresa los datos del precio de venta para encontrar el costo FOB.
+            </p>
+            <form id="calculationFormPVPCosto" class="space-y-6">
+                <!-- Sección de entrada de PVP -->
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <label for="pvpInput" class="block text-sm font-medium text-gray-700 mb-2">PVP (Precio de Venta)</label>
+                    <div class="price-input-container">
+                        <div class="flex items-center">
+                            <input type="number" step="0.01" id="pvpInput" name="pvpInput"
+                                class="price-input"
+                                placeholder="Ej: 59.90" required>
+                            <span class="currency-symbol-large pr-4">S/</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex space-x-4">
+                        <div class="flex items-center">
+                            <input id="currencyUSD_pvp_costo" name="currency_pvp_costo" type="radio" value="USD" checked
+                                class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                            <label for="currencyUSD_pvp_costo" class="ml-2 block text-sm font-medium text-gray-700">
+                                Dólares (FOB)
+                            </label>
+                        </div>
+                        <div class="flex items-center">
+                            <input id="currencyEUR_pvp_costo" name="currency_pvp_costo" type="radio" value="EUR"
+                                class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                            <label for="currencyEUR_pvp_costo" class="ml-2 block text-sm font-medium text-gray-700">
+                                Euros (FOB)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- Sección de entrada del tipo de cambio y factor de importación -->
+                <div class="bg-gray-50 p-6 rounded-lg grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="exchangeRatePVP" class="block text-sm font-medium text-gray-700">Tipo de Cambio</label>
+                        <div class="mt-1 flex rounded-lg shadow-sm">
+                            <input type="number" step="0.0001" id="exchangeRatePVP" name="exchangeRatePVP"
+                                class="standard-input rounded-l-lg"
+                                placeholder="Ej: 3.60" required>
+                            <div class="inline-flex items-center px-4 rounded-r-lg border-2 border-l-0 border-gray-300 bg-white text-gray-500">
+                                <span>Moneda Local</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="importFactorPVP" class="block text-sm font-medium text-gray-700">Factor de Importación</label>
+                        <div class="mt-1 flex rounded-lg shadow-sm">
+                            <input type="number" step="0.01" id="importFactorPVP" name="importFactorPVP" value="1.3"
+                                class="standard-input"
+                                placeholder="Ej: 1.3" required>
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- Botón de cálculo -->
+                <div class="flex justify-center">
+                    <button type="submit"
+                            class="w-full sm:w-auto px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                        Calcular
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Sección de resultados para PVP -> Costo (actualizada) -->
+            <div id="resultsPVPCosto" class="mt-8 space-y-4 hidden">
+                <h2 class="text-2xl font-bold text-gray-900 text-center">Alternativas de Costo FOB</h2>
+                
+                <!-- Opciones de Costo FOB en una sola línea -->
+                <div class="flex flex-col sm:flex-row justify-between items-stretch gap-4 text-center">
+                    
+                    <!-- Opción Marcaje 2.65 -->
+                    <div class="flex-1 bg-purple-50 border-l-4 border-purple-400 p-4 rounded-lg shadow-md">
+                        <h4 class="text-sm font-medium text-purple-800">Marcaje 2.65</h4>
+                        <p id="fob265" class="mt-1 text-xl font-bold text-purple-900">$ 0.00</p>
+                        <p class="mt-2 text-sm text-purple-700">CV(%): <span id="cv265" class="font-bold">0.0%</span></p>
+                    </div>
+
+                    <!-- Opción Marcaje 2.5 -->
+                    <div class="flex-1 bg-indigo-50 border-l-4 border-indigo-400 p-4 rounded-lg shadow-md">
+                        <h4 class="text-sm font-medium text-indigo-800">Marcaje 2.5</h4>
+                        <p id="fob25" class="mt-1 text-xl font-bold text-indigo-900">$ 0.00</p>
+                        <p class="mt-2 text-sm text-indigo-700">CV(%): <span id="cv25" class="font-bold">0.0%</span></p>
+                    </div>
+                    
+                    <!-- Opción Marcaje 2.4 -->
+                    <div class="flex-1 bg-pink-50 border-l-4 border-pink-400 p-4 rounded-lg shadow-md">
+                        <h4 class="text-sm font-medium text-pink-800">Marcaje 2.4</h4>
+                        <p id="fob24" class="mt-1 text-xl font-bold text-pink-900">$ 0.00</p>
+                        <p class="mt-2 text-sm text-pink-700">CV(%): <span id="cv24" class="font-bold">0.0%</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contenedor de la pestaña "PVP -> IC -> Costo" -->
+        <div id="pvp-ic-costo-tab-content" class="hidden">
+            <p class="text-center text-gray-600 mb-8">
+                Ingresa el precio de venta y el margen del intermediario para calcular el costo FOB.
+            </p>
+            <form id="calculationFormPVPICCosto" class="space-y-6">
+                 <!-- Sección de entrada de PVP -->
+                 <div class="bg-gray-50 p-6 rounded-lg">
+                    <label for="pvpInputIC" class="block text-sm font-medium text-gray-700 mb-2">PVP (Precio de Venta)</label>
+                    <div class="price-input-container">
+                        <div class="flex items-center">
+                            <input type="number" step="0.01" id="pvpInputIC" name="pvpInputIC"
+                                class="price-input"
+                                placeholder="Ej: 59.90" required>
+                            <span class="currency-symbol-large pr-4">S/</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 flex space-x-4">
+                        <div class="flex items-center">
+                            <input id="currencyUSD_pvp_costo_ic" name="currency_pvp_costo_ic" type="radio" value="USD" checked
+                                class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                            <label for="currencyUSD_pvp_costo_ic" class="ml-2 block text-sm font-medium text-gray-700">
+                                Dólares (FOB)
+                            </label>
+                        </div>
+                        <div class="flex items-center">
+                            <input id="currencyEUR_pvp_costo_ic" name="currency_pvp_costo_ic" type="radio" value="EUR"
+                                class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-gray-300">
+                            <label for="currencyEUR_pvp_costo_ic" class="ml-2 block text-sm font-medium text-gray-700">
+                                Euros (FOB)
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección de entrada del tipo de cambio, factor de importación y margen del intermediario -->
+                <div class="bg-gray-50 p-6 rounded-lg grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="exchangeRateIC" class="block text-sm font-medium text-gray-700">Tipo de Cambio</label>
+                        <div class="mt-1 flex rounded-lg shadow-sm">
+                            <input type="number" step="0.0001" id="exchangeRateIC" name="exchangeRateIC"
+                                class="standard-input rounded-l-lg"
+                                placeholder="Ej: 3.60" required>
+                            <div class="inline-flex items-center px-4 rounded-r-lg border-2 border-l-0 border-gray-300 bg-white text-gray-500">
+                                <span>Moneda Local</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="importFactorIC" class="block text-sm font-medium text-gray-700">Factor de Importación</label>
+                        <div class="mt-1 flex rounded-lg shadow-sm">
+                            <input type="number" step="0.01" id="importFactorIC" name="importFactorIC" value="1.3"
+                                class="standard-input"
+                                placeholder="Ej: 1.3" required>
+                        </div>
+                    </div>
+                     <div class="sm:col-span-2">
+                        <label for="marginIC" class="block text-sm font-medium text-gray-700">Margen Intermediario (%)</label>
+                        <div class="mt-1 flex rounded-lg shadow-sm">
+                            <input type="number" step="0.01" id="marginIC" name="marginIC" value="20"
+                                class="standard-input rounded-l-lg"
+                                placeholder="Ej: 20" required>
+                            <div class="inline-flex items-center px-4 rounded-r-lg border-2 border-l-0 border-gray-300 bg-white text-gray-500">
+                                <span>%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            
+                <!-- Botón de cálculo -->
+                <div class="flex justify-center">
+                    <button type="submit"
+                            class="w-full sm:w-auto px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition duration-150 ease-in-out">
+                        Calcular
+                    </button>
+                </div>
+            </form>
+            
+            <!-- Sección de resultados para PVP -> IC -> Costo -->
+            <div id="resultsPVPICCosto" class="mt-8 space-y-4 hidden">
+                <h2 class="text-2xl font-bold text-gray-900 text-center">Resultados con Intermediario</h2>
+                
+                <hr class="my-6 border-gray-200">
+
+                <h3 class="text-2xl font-bold text-gray-900 text-center">Alternativas de Costo FOB</h3>
+                <div class="flex flex-col sm:flex-row justify-between items-stretch gap-4 text-center">
+                    
+                    <!-- Opción Marcaje 2.65 -->
+                    <div class="flex-1 bg-purple-50 border-l-4 border-purple-400 p-4 rounded-lg shadow-md">
+                        <h4 class="text-sm font-medium text-purple-800">Marcaje 2.65</h4>
+                        <p id="kardexIC265" class="text-sm font-bold text-purple-900">Kárdex: S/ 0.00</p>
+                        <p id="fobIC265" class="mt-1 text-xl font-bold text-purple-900">$ 0.00</p>
+                        <p class="mt-2 text-sm text-purple-700">CV(%): <span id="cvIC265" class="font-bold">0.0%</span></p>
+                    </div>
+
+                    <!-- Opción Marcaje 2.5 -->
+                    <div class="flex-1 bg-indigo-50 border-l-4 border-indigo-400 p-4 rounded-lg shadow-md">
+                        <h4 class="text-sm font-medium text-indigo-800">Marcaje 2.5</h4>
+                        <p id="kardexIC25" class="text-sm font-bold text-indigo-900">Kárdex: S/ 0.00</p>
+                        <p id="fobIC25" class="mt-1 text-xl font-bold text-indigo-900">$ 0.00</p>
+                        <p class="mt-2 text-sm text-indigo-700">CV(%): <span id="cvIC25" class="font-bold">0.0%</span></p>
+                    </div>
+                    
+                    <!-- Opción Marcaje 2.4 -->
+                    <div class="flex-1 bg-pink-50 border-l-4 border-pink-400 p-4 rounded-lg shadow-md">
+                        <h4 class="text-sm font-medium text-pink-800">Marcaje 2.4</h4>
+                        <p id="kardexIC24" class="text-sm font-bold text-pink-900">Kárdex: S/ 0.00</p>
+                        <p id="fobIC24" class="mt-1 text-xl font-bold text-pink-900">$ 0.00</p>
+                        <p class="mt-2 text-sm text-pink-700">CV(%): <span id="cvIC24" class="font-bold">0.0%</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Escucha cuando el documento HTML ha cargado completamente.
+        document.addEventListener('DOMContentLoaded', () => {
+            // Referencias a los elementos del DOM de la primera pestaña
+            const formCostoPVP = document.getElementById('calculationFormCostoPVP');
+            const priceInput = document.getElementById('price');
+            const exchangeRateInput = document.getElementById('exchangeRate');
+            const importFactorInput = document.getElementById('importFactor');
+            const currencyUSD = document.getElementById('currencyUSD');
+            const currencyEUR = document.getElementById('currencyEUR');
+            const currencySymbol = document.getElementById('currencySymbol');
+            const resultsCostoPVP = document.getElementById('resultsCostoPVP');
+            const kardexCostElement = document.getElementById('kardexCost');
+            const pvpSugeridoElement = document.getElementById('pvpSugerido');
+            const pvpSugeridoCVElement = document.getElementById('pvpSugeridoCV');
+            const inferiorPvpElement = document.getElementById('inferiorPvp');
+            const inferiorCVElement = document.getElementById('inferiorCV');
+            const superiorPvpElement = document.getElementById('superiorPvp');
+            const superiorCVElement = document.getElementById('superiorCV');
+
+            // Referencias a los elementos del DOM de la segunda pestaña
+            const formPVPCosto = document.getElementById('calculationFormPVPCosto');
+            const pvpInput = document.getElementById('pvpInput');
+            const exchangeRatePVP = document.getElementById('exchangeRatePVP');
+            const importFactorPVP = document.getElementById('importFactorPVP');
+            const currencyUSDpvpCosto = document.getElementById('currencyUSD_pvp_costo');
+            const currencyEURpvpCosto = document.getElementById('currencyEUR_pvp_costo');
+            const resultsPVPCosto = document.getElementById('resultsPVPCosto');
+            const fob265Element = document.getElementById('fob265');
+            const cv265Element = document.getElementById('cv265');
+            const fob25Element = document.getElementById('fob25');
+            const cv25Element = document.getElementById('cv25');
+            const fob24Element = document.getElementById('fob24');
+            const cv24Element = document.getElementById('cv24');
+
+            // Referencias a los elementos del DOM de la tercera pestaña
+            const formPVPICCosto = document.getElementById('calculationFormPVPICCosto');
+            const pvpInputIC = document.getElementById('pvpInputIC');
+            const marginICInput = document.getElementById('marginIC'); 
+            const exchangeRateIC = document.getElementById('exchangeRateIC');
+            const importFactorIC = document.getElementById('importFactorIC');
+            const resultsPVPICCosto = document.getElementById('resultsPVPICCosto');
+            const kardexIC265Element = document.getElementById('kardexIC265');
+            const fobIC265Element = document.getElementById('fobIC265');
+            const cvIC265Element = document.getElementById('cvIC265');
+            const kardexIC25Element = document.getElementById('kardexIC25');
+            const fobIC25Element = document.getElementById('fobIC25');
+            const cvIC25Element = document.getElementById('cvIC25');
+            const kardexIC24Element = document.getElementById('kardexIC24');
+            const fobIC24Element = document.getElementById('fobIC24');
+            const cvIC24Element = document.getElementById('cvIC24');
+            
+            // Referencias a los botones de la pestaña
+            const tabCostoPVP = document.getElementById('tab-costo-pvp');
+            const tabPVPCosto = document.getElementById('tab-pvp-costo');
+            const tabPVPICCosto = document.getElementById('tab-pvp-ic-costo');
+            const currencyUSDpvpCostoIC = document.getElementById('currencyUSD_pvp_costo_ic');
+            const currencyEURpvpCostoIC = document.getElementById('currencyEUR_pvp_costo_ic');
+
+
+            // Define los tipos de cambio por defecto.
+            const defaultExchangeRates = {
+                'USD': 3.60,
+                'EUR': 4.10
+            };
+
+            // Función para cambiar de pestaña
+            window.showTab = function(tabName) {
+                document.getElementById('costo-pvp-tab-content').classList.add('hidden');
+                document.getElementById('pvp-costo-tab-content').classList.add('hidden');
+                document.getElementById('pvp-ic-costo-tab-content').classList.add('hidden');
+                
+                tabCostoPVP.classList.remove('tab-active', 'text-gray-500');
+                tabPVPCosto.classList.remove('tab-active', 'text-gray-500');
+                tabPVPICCosto.classList.remove('tab-active', 'text-gray-500');
+
+                if (tabName === 'costo-pvp') {
+                    document.getElementById('costo-pvp-tab-content').classList.remove('hidden');
+                    tabCostoPVP.classList.add('tab-active');
+                    tabPVPCosto.classList.add('text-gray-500');
+                    tabPVPICCosto.classList.add('text-gray-500');
+                } else if (tabName === 'pvp-costo') {
+                    document.getElementById('pvp-costo-tab-content').classList.remove('hidden');
+                    tabPVPCosto.classList.add('tab-active');
+                    tabCostoPVP.classList.add('text-gray-500');
+                    tabPVPICCosto.classList.add('text-gray-500');
+                } else if (tabName === 'pvp-ic-costo') {
+                    document.getElementById('pvp-ic-costo-tab-content').classList.remove('hidden');
+                    tabPVPICCosto.classList.add('tab-active');
+                    tabCostoPVP.classList.add('text-gray-500');
+                    tabPVPCosto.classList.add('text-gray-500');
+                }
+            };
+            
+            // Función para actualizar los valores por defecto del tipo de cambio.
+            const updateDefaultExchangeRate = () => {
+                const selectedCurrency = document.querySelector('input[name="currency"]:checked');
+                if (selectedCurrency) {
+                    exchangeRateInput.value = defaultExchangeRates[selectedCurrency.value];
+                    currencySymbol.textContent = selectedCurrency.value === 'USD' ? '$' : '€';
+                }
+                const selectedCurrencyPVP = document.querySelector('input[name="currency_pvp_costo"]:checked');
+                if(selectedCurrencyPVP) {
+                     exchangeRatePVP.value = defaultExchangeRates[selectedCurrencyPVP.value];
+                }
+
+                const selectedCurrencyIC = document.querySelector('input[name="currency_pvp_costo_ic"]:checked');
+                if(selectedCurrencyIC) {
+                    exchangeRateIC.value = defaultExchangeRates[selectedCurrencyIC.value];
+                }
+            };
+            
+            updateDefaultExchangeRate();
+            currencyUSD.addEventListener('change', updateDefaultExchangeRate);
+            currencyEUR.addEventListener('change', updateDefaultExchangeRate);
+            currencyUSDpvpCosto.addEventListener('change', updateDefaultExchangeRate);
+            currencyEURpvpCosto.addEventListener('change', updateDefaultExchangeRate);
+            currencyUSDpvpCostoIC.addEventListener('change', updateDefaultExchangeRate);
+            currencyEURpvpCostoIC.addEventListener('change', updateDefaultExchangeRate);
+
+            // Lógica de cálculo para la pestaña "Costo -> PVP"
+            formCostoPVP.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const price = parseFloat(priceInput.value);
+                const exchangeRate = parseFloat(exchangeRateInput.value);
+                const importFactor = parseFloat(importFactorInput.value);
+
+                if (isNaN(price) || isNaN(exchangeRate) || isNaN(importFactor) || price <= 0 || exchangeRate <= 0 || importFactor <= 0) {
+                    const errorMessage = "Por favor, ingresa valores numéricos válidos y positivos.";
+                    console.error(errorMessage);
+                    return;
+                }
+
+                const factorIGV = 1.18;
+                const cvEsperado = 0.38;
+                const kardexCost = price * importFactor * exchangeRate;
+                const pvpSugerido = (kardexCost * factorIGV) / cvEsperado;
+
+                kardexCostElement.textContent = `S/ ${kardexCost.toFixed(2)}`;
+                pvpSugeridoElement.textContent = `S/ ${pvpSugerido.toFixed(2)}`;
+
+                const cvPercentSugerido = ((kardexCost * factorIGV) / pvpSugerido) * 100;
+                
+                const pvpSuperior = (Math.ceil(pvpSugerido / 10) * 10 - 0.1);
+                const pvpInferior = pvpSuperior - 10;
+                
+                const cvPercentInferior = ((kardexCost * factorIGV) / pvpInferior) * 100;
+                const cvPercentSuperior = ((kardexCost * factorIGV) / pvpSuperior) * 100;
+                
+                inferiorPvpElement.textContent = `S/ ${pvpInferior.toFixed(2)}`;
+                inferiorCVElement.textContent = `${cvPercentInferior.toFixed(2)}%`;
+                pvpSugeridoCVElement.textContent = `${cvPercentSugerido.toFixed(2)}%`;
+                superiorPvpElement.textContent = `S/ ${pvpSuperior.toFixed(2)}`;
+                superiorCVElement.textContent = `${cvPercentSuperior.toFixed(2)}%`;
+                
+                resultsCostoPVP.classList.remove('hidden');
+            });
+
+            // Lógica de cálculo para la pestaña "PVP -> Costo"
+            formPVPCosto.addEventListener('submit', (e) => {
+                e.preventDefault();
+            
+                const pvp = parseFloat(pvpInput.value);
+                const exchangeRate = parseFloat(exchangeRatePVP.value);
+                const importFactor = parseFloat(importFactorPVP.value);
+                const selectedCurrency = document.querySelector('input[name="currency_pvp_costo"]:checked').value;
+            
+                if (isNaN(pvp) || isNaN(exchangeRate) || isNaN(importFactor) || pvp <= 0 || exchangeRate <= 0 || importFactor <= 0) {
+                    const errorMessage = "Por favor, ingresa valores numéricos válidos y positivos.";
+                    console.error(errorMessage);
+                    return;
+                }
+            
+                const factorIGV = 1.18;
+
+                const marcaje265 = 2.65;
+                const marcaje25 = 2.5;
+                const marcaje24 = 2.4;
+                
+                const cv265 = 1 / marcaje265;
+                const cv25 = 1 / marcaje25;
+                const cv24 = 1 / marcaje24;
+                
+                const fob265 = (pvp * cv265) / (factorIGV * importFactor * exchangeRate);
+                const fob25 = (pvp * cv25) / (factorIGV * importFactor * exchangeRate);
+                const fob24 = (pvp * cv24) / (factorIGV * importFactor * exchangeRate);
+                
+                const currencySymbolFOB = selectedCurrency === 'USD' ? '$' : '€';
+            
+                fob265Element.textContent = `${currencySymbolFOB} ${fob265.toFixed(2)}`;
+                fob25Element.textContent = `${currencySymbolFOB} ${fob25.toFixed(2)}`;
+                fob24Element.textContent = `${currencySymbolFOB} ${fob24.toFixed(2)}`;
+                
+                cv265Element.textContent = `${(cv265 * 100).toFixed(1)}%`;
+                cv25Element.textContent = `${(cv25 * 100).toFixed(1)}%`;
+                cv24Element.textContent = `${(cv24 * 100).toFixed(1)}%`;
+            
+                resultsPVPCosto.classList.remove('hidden');
+            });
+
+            // Lógica de cálculo para la pestaña "PVP -> IC -> Costo"
+            formPVPICCosto.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const pvp = parseFloat(pvpInputIC.value);
+                const marginIC = parseFloat(marginICInput.value) / 100;
+                const exchangeRate = parseFloat(exchangeRateIC.value);
+                const importFactor = parseFloat(importFactorIC.value);
+                
+                const selectedCurrency = document.querySelector('input[name="currency_pvp_costo_ic"]:checked').value;
+
+                if (isNaN(pvp) || isNaN(marginIC) || isNaN(exchangeRate) || isNaN(importFactor) || pvp <= 0 || exchangeRate <= 0 || importFactor <= 0 || marginIC < 0) {
+                    const errorMessage = "Por favor, ingresa valores numéricos válidos y positivos.";
+                    console.error(errorMessage);
+                    return;
+                }
+
+                const factorIGV = 1.18;
+                
+                const marcaje265 = 2.65;
+                const marcaje25 = 2.5;
+                const marcaje24 = 2.4;
+                
+                const kardexIC265 = (pvp / factorIGV) / marcaje265;
+                const kardexIC25 = (pvp / factorIGV) / marcaje25;
+                const kardexIC24 = (pvp / factorIGV) / marcaje24;
+
+                const cv265 = 1 / marcaje265;
+                const cv25 = 1 / marcaje25;
+                const cv24 = 1 / marcaje24;
+
+                const fobIC265 = (kardexIC265 * (1 - marginIC)) / (importFactor * exchangeRate);
+                const fobIC25 = (kardexIC25 * (1 - marginIC)) / (importFactor * exchangeRate);
+                const fobIC24 = (kardexIC24 * (1 - marginIC)) / (importFactor * exchangeRate);
+                
+                const currencySymbolFOB = selectedCurrency === 'USD' ? '$' : '€';
+                
+                kardexIC265Element.textContent = `Kárdex: S/ ${kardexIC265.toFixed(2)}`;
+                fobIC265Element.textContent = `${currencySymbolFOB} ${fobIC265.toFixed(2)}`;
+                cvIC265Element.textContent = `${(cv265 * 100).toFixed(1)}%`;
+
+                kardexIC25Element.textContent = `Kárdex: S/ ${kardexIC25.toFixed(2)}`;
+                fobIC25Element.textContent = `${currencySymbolFOB} ${fobIC25.toFixed(2)}`;
+                cvIC25Element.textContent = `${(cv25 * 100).toFixed(1)}%`;
+
+                kardexIC24Element.textContent = `Kárdex: S/ ${kardexIC24.toFixed(2)}`;
+                fobIC24Element.textContent = `${currencySymbolFOB} ${fobIC24.toFixed(2)}`;
+                cvIC24Element.textContent = `${(cv24 * 100).toFixed(1)}%`;
+
+                resultsPVPICCosto.classList.remove('hidden');
+            });
+
+            priceInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    formCostoPVP.dispatchEvent(new Event('submit'));
+                }
+            });
+
+            pvpInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    formPVPCosto.dispatchEvent(new Event('submit'));
+                }
+            });
+            
+             pvpInputIC.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') {
+                    formPVPICCosto.dispatchEvent(new Event('submit'));
+                }
+            });
+
+        });
+    </script>
+</body>
+</html>
